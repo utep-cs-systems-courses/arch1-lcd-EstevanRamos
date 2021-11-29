@@ -97,6 +97,10 @@ void main()
 	  addlights(size);
 	}
       }
+      if(switches & SW2){
+	char* msg = "Merry Christmas";
+	drawString5x7(0,0,msg,COLOR_WHITE, COLOR_BLUE);
+      }
       
       if(size == 60){
 	size = 0;
