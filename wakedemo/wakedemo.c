@@ -64,6 +64,7 @@ void wdt_c_handler()
   
 void update_shape();
 
+
 void main()
 {
   
@@ -77,10 +78,32 @@ void main()
   or_sr(0x8);	              /**< GIE (enable interrupts) */
   
   clearScreen(COLOR_BLUE);
+  int size = 10;
+  int drawn = 0;
   while (1) {			/* forever */
     if (redrawScreen) {
       redrawScreen = 0;
-      update_shape();
+
+      if(switches & SW4){
+	if(size % 5 == 0){
+	  christmas_tree(size);
+	  drawn = 1;
+	}
+	size++;
+      }
+
+      if(switches & SW3){
+	if(drawn){
+	  addlights(size);
+	}
+      }
+      
+      if(size == 60){
+	size = 0;
+	clearScreen(COLOR_BLUE);
+      }
+
+      
     }
     P1OUT &= ~LED;	/* led off */
     or_sr(0x10);	/**< CPU OFF */
@@ -88,6 +111,49 @@ void main()
   }
 }
 
+
+void
+addlights(int size){
+  static unsigned char row = screenHeight, col = screenWidth / 2;
+  row = row - size;
+  int offset = (int)size/2;
+  drawPixel(col+ offset, row - size + offset, COLOR_RED);
+  drawPixel(col- offset, row - offset, COLOR_BLUE);
+  drawPixel(col,row - size, COLOR_YELLOW);
+  drawPixel(col,row - size - offset , COLOR_BLACK);
+  drawPixel(col+ offset ,row - offset, COLOR_ORANGE);
+  drawPixel(col-offset,row - size + offset, COLOR_PURPLE);
+  drawPixel(col+offset,row, COLOR_RED);
+  drawPixel(col,row - offset, COLOR_BLUE);
+}
+
+void
+christmas_tree(int size){
+  //clearScreen(COLOR_BLUE);
+  static unsigned char row = screenHeight / 2, col = screenWidth / 2;
+
+  u_char c_col = col;
+  u_char c_row = screenHeight - 2 * size;
+  int center =  (int)(size/2)/2;
+
+  //if(switches & SW4) return;
+
+  fillRectangle(c_col-center, screenHeight - size, size/2, size, COLOR_BROWN);
+  for(int i = 0; i<size ; i++){
+    for(int j = 0;j<size-i; j++){
+      drawPixel(c_col + j ,c_row-i, COLOR_GREEN);
+      drawPixel(c_col - j, c_row-i, COLOR_GREEN);
+
+      u_char row2 = c_row + size/2;
+      drawPixel(c_col + j ,row2 - i, COLOR_GREEN);
+      drawPixel(c_col - j, row2 - i, COLOR_GREEN);
+
+      u_char row3 = row2 + size/2;
+      drawPixel(c_col + j, row3 - i, COLOR_GREEN);
+      drawPixel(c_col - j, row3 - i, COLOR_GREEN);
+    }
+  }
+}
     
     
 void
