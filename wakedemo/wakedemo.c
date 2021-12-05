@@ -2,6 +2,7 @@
 #include <libTimer.h>
 #include "lcdutils.h"
 #include "lcddraw.h"
+#include "buzzer.h"
 
 // WARNING: LCD DISPLAY USES P1.0.  Do not touch!!! 
 
@@ -61,9 +62,6 @@ void wdt_c_handler()
     redrawScreen = 1;
   }
 }
-  
-void update_shape();
-
 
 void main()
 {
@@ -73,6 +71,7 @@ void main()
   configureClocks();
   lcd_init();
   switch_init();
+  buzzer_init();
   
   enableWDTInterrupts();      /**< enable periodic interrupt */
   or_sr(0x8);	              /**< GIE (enable interrupts) */
@@ -80,16 +79,15 @@ void main()
   clearScreen(COLOR_BLUE);
   int size = 10;
   int drawn = 0;
+  int seconds = 0;
   while (1) {			/* forever */
     if (redrawScreen) {
       redrawScreen = 0;
 
       if(switches & SW4){
-	if(size % 5 == 0){
-	  christmas_tree(size);
-	  drawn = 1;
-	}
-	size++;
+	christmas_tree(size);
+	drawn = 1;
+	size = size + 5;
       }
 
       if(switches & SW3){
@@ -97,9 +95,16 @@ void main()
 	  addlights(size);
 	}
       }
+
       if(switches & SW2){
-	char* msg = "Merry Christmas";
-	drawString5x7(0,0,msg,COLOR_WHITE, COLOR_BLUE);
+	char* msg1 = "Merry";
+	char* msg2 = "Christmas";
+	drawString11x16(0,0,msg1,COLOR_WHITE, COLOR_BLUE);
+	drawString11x16(11,16,msg2,COLOR_WHITE, COLOR_BLUE);
+      }
+
+      if(switches & SW1){
+	playMerryChristmas();
       }
       
       if(size == 60){
@@ -118,17 +123,22 @@ void main()
 
 void
 addlights(int size){
-  static unsigned char row = screenHeight, col = screenWidth / 2;
+  int row = 160, col = 128 / 2;
+  drawPixel(row,row, COLOR_BLACK);
+  
   row = row - size;
   int offset = (int)size/2;
-  drawPixel(col+ offset, row - size + offset, COLOR_RED);
-  drawPixel(col- offset, row - offset, COLOR_BLUE);
-  drawPixel(col,row - size, COLOR_YELLOW);
-  drawPixel(col,row - size - offset , COLOR_BLACK);
-  drawPixel(col+ offset ,row - offset, COLOR_ORANGE);
-  drawPixel(col-offset,row - size + offset, COLOR_PURPLE);
-  drawPixel(col+offset,row, COLOR_RED);
-  drawPixel(col,row - offset, COLOR_BLUE);
+  int edge = (int)size/8;
+
+  
+  fillRectangle(col+ offset, row - size + offset, edge, edge, COLOR_RED);
+  fillRectangle(col- offset, row - offset, edge, edge, COLOR_YELLOW);
+  fillRectangle(col-offset/2,row - size,edge, edge, COLOR_WHITE);
+  fillRectangle(col- edge*2 ,row - size*2+edge, edge * 4, edge * 4, COLOR_YELLOW);
+  fillRectangle(col+offset/2,row - size-offset + offset,edge,edge, COLOR_PURPLE);
+  fillRectangle(col+offset,row+ offset/2-2, edge,edge, COLOR_RED);
+  fillRectangle(col-offset,row + offset/2-2, edge, edge, COLOR_YELLOW);
+  fillRectangle(col,row - offset, edge, edge, COLOR_BLUE);
 }
 
 void
