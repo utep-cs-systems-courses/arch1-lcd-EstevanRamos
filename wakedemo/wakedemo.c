@@ -3,6 +3,8 @@
 #include "lcdutils.h"
 #include "lcddraw.h"
 #include "buzzer.h"
+#include "led.h"
+#include "led-assy.h"
 
 // WARNING: LCD DISPLAY USES P1.0.  Do not touch!!! 
 
@@ -66,12 +68,13 @@ void wdt_c_handler()
 void main()
 {
   
-  P1DIR |= LED;		/**< Green led on when CPU on */
-  P1OUT |= LED;
+  // P1DIR |= LED;		/**< Green led on when CPU on */
+  // P1OUT |= LED;
   configureClocks();
   lcd_init();
   switch_init();
   buzzer_init();
+  led_init();
   
   enableWDTInterrupts();      /**< enable periodic interrupt */
   or_sr(0x8);	              /**< GIE (enable interrupts) */
@@ -80,6 +83,8 @@ void main()
   int size = 10;
   int drawn = 0;
   int seconds = 0;
+  int blink_count = 0;
+  
   while (1) {			/* forever */
     if (redrawScreen) {
       redrawScreen = 0;
@@ -101,6 +106,12 @@ void main()
 	char* msg2 = "Christmas";
 	drawString11x16(0,0,msg1,COLOR_WHITE, COLOR_BLUE);
 	drawString11x16(11,16,msg2,COLOR_WHITE, COLOR_BLUE);
+
+	alternate_leds(blink_count);
+	blink_count = blink_count + 50;
+	if(blink_count >250){
+	  blink_count = 0;
+	}
       }
 
       if(switches & SW1){
@@ -114,9 +125,9 @@ void main()
 
       
     }
-    P1OUT &= ~LED;	/* led off */
+    // P1OUT &= ~LED;	/* led off */
     or_sr(0x10);	/**< CPU OFF */
-    P1OUT |= LED;	/* led on */
+    // P1OUT |= LED;	/* led on */
   }
 }
 
@@ -143,14 +154,11 @@ addlights(int size){
 
 void
 christmas_tree(int size){
-  //clearScreen(COLOR_BLUE);
   static unsigned char row = screenHeight / 2, col = screenWidth / 2;
 
   u_char c_col = col;
   u_char c_row = screenHeight - 2 * size;
   int center =  (int)(size/2)/2;
-
-  //if(switches & SW4) return;
 
   fillRectangle(c_col-center, screenHeight - size, size/2, size, COLOR_BROWN);
   for(int i = 0; i<size ; i++){
@@ -166,32 +174,6 @@ christmas_tree(int size){
       drawPixel(c_col + j, row3 - i, COLOR_GREEN);
       drawPixel(c_col - j, row3 - i, COLOR_GREEN);
     }
-  }
-}
-    
-    
-void
-update_shape()
-{
-  static unsigned char row = screenHeight / 2, col = screenWidth / 2;
-  static char blue = 31, green = 0, red = 31;
-  static unsigned char step = 0;
-  if (switches & SW4) return;
-  if (step <= 60) {
-    int startCol = col - step;
-    int endCol = col + step;
-    int width = 1 + endCol - startCol;
-    // a color in this BGR encoding is BBBB BGGG GGGR RRRR
-    unsigned int color = (blue << 11) | (green << 5) | red;
-    fillRectangle(startCol, row+step, width, 1, color);
-    fillRectangle(startCol, row-step, width, 1, color);
-    if (switches & SW3) green = (green + 1) % 64;
-    if (switches & SW2) blue = (blue + 2) % 32;
-    if (switches & SW1) red = (red - 3) % 32;
-    step ++;
-  } else {
-     clearScreen(COLOR_BLUE);
-     step = 0;
   }
 }
 
